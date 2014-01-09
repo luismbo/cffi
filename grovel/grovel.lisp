@@ -363,10 +363,16 @@ int main(int argc, char**argv) {
   (dolist (c-name c-names)
     (format out "~&#ifdef ~A~%" c-name)
     (c-export out lisp-name)
-    (c-format out "(cl:defconstant ")
+    (c-format out (if (eq type 'pointer)
+                      "(cl:defparameter "
+                      "(cl:defconstant "))
     (c-print-symbol out lisp-name t)
     (c-format out " ")
     (ecase type
+      (pointer
+       (format out "~&  fprintf(output, ~
+                                \"(cffi:make-pointer %\"PRIuPTR\")\", ~
+                                ~A);" c-name))
       (integer
        (format out "~&  if(_64_BIT_VALUE_FITS_SIGNED_P(~A))~%" c-name)
        (format out "    fprintf(output, \"%lli\", (int64_t) ~A);" c-name)
