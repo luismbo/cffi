@@ -2,15 +2,15 @@ language: lisp
 
 env:
   matrix:
-    - LISP=abcl
+#    - LISP=abcl
     - LISP=sbcl
-    - LISP=sbcl32
-    - LISP=ccl
-    - LISP=ccl32
-    - LISP=clisp
-    - LISP=clisp32
-    - LISP=cmucl
-    - LISP=ecl
+#    - LISP=sbcl32
+#    - LISP=ccl
+#    - LISP=ccl32
+#    - LISP=clisp
+#    - LISP=clisp32
+#    - LISP=cmucl
+#    - LISP=ecl
 
 #matrix:
 #  allow_failures:
@@ -24,8 +24,8 @@ install:
       git clone --depth=1 git@github.com:cl-babel/babel.git )
 
 script:
-  - cl-launch -i "(load \"$HOME/quicklisp/setup.lisp\") \
-                  (ql:quickload :cffi-tests)            \
-                  (asdf:test-system :cffi)              \
-                  (unless (null (rtest:pending-tests))  \
+  - cl-launch -i "(load \"$HOME/quicklisp/setup.lisp\")
+                  (ql:quickload :cffi-tests)
+                  (asdf:test-system :cffi)
+                  (unless (null (rtest:pending-tests))
                     (uiop:quit 1))"
