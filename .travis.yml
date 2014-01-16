@@ -23,8 +23,8 @@ install:
   - git clone --depth=1 git://github.com/cl-babel/babel.git ~/lisp/babel
 
 script:
-  - cl-launch "(load \"$HOME/quicklisp/setup.lisp\")
-               (ql:quickload :cffi-tests)
-               (asdf:test-system :cffi)
-               (unless (null (rtest:pending-tests))
-                 (uiop:quit 1))"
+  - cl-launch -i "(load \"$HOME/quicklisp/setup.lisp\")
+                  (ql:quickload :cffi-tests)
+                  (asdf:test-system :cffi)
+                  (unless (null (rtest:pending-tests))
+                    (uiop:quit 1))"
