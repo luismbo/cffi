@@ -4,7 +4,7 @@ env:
   matrix:
 #    - LISP=abcl
     - LISP=sbcl
-#    - LISP=sbcl32
+    - LISP=sbcl32
 #    - LISP=ccl
 #    - LISP=ccl32
 #    - LISP=clisp
