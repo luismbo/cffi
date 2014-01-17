@@ -19,7 +19,7 @@ env:
 install:
   - curl https://raw.github.com/luismbo/cl-travis/master/install.sh | sh
   - if [ "${LISP:(-2)}" = "32" ]; then
-      sudo apt-get install libc6-dev-i386 libffi6:i386;
+      sudo apt-get install libc6-dev-i386 libffi6-dev:i386;
     fi
   - git clone --depth=1 git://github.com/trivial-features/trivial-features.git ~/lisp/trivial-features
   - git clone --depth=1 git://common-lisp.net/projects/alexandria/alexandria.git ~/lisp/alexandria
