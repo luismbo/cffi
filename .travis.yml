@@ -17,7 +17,7 @@ env:
 #    - env: LISP=sbcl
 
 install:
-  - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | sh
+  - curl -L https://github.com/luismbo/cl-travis/raw/master/.travis.yml | sh
   - if [ "${LISP:(-2)}" = "32" ]; then
       sudo apt-get install libc6-dev-i386 libffi-dev:i386;
     fi
@@ -26,7 +26,8 @@ install:
   - git clone --depth=1 git://github.com/cl-babel/babel.git ~/lisp/babel
 
 script:
-  - cl-launch -i '(ql:quickload :cffi-tests)
-                  (asdf:test-system :cffi)
-                  (unless (null (rtest:pending-tests))
-                    (uiop:quit 1))'
+  - cl-launch -i '(with-standard-io-syntax
+                    (ql:quickload :cffi-tests)
+                    (asdf:test-system :cffi)
+                    (unless (null (rtest:pending-tests))
+                      (uiop:quit 1)))'
