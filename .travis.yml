@@ -17,7 +17,7 @@ env:
 #    - env: LISP=sbcl
 
 install:
-  - curl https://raw.github.com/luismbo/cl-travis/master/install.sh | sh
+  - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | sh
   - if [ "${LISP:(-2)}" = "32" ]; then
       sudo apt-get install libc6-dev-i386 libffi-dev:i386;
     fi
