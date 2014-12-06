@@ -28,6 +28,5 @@ install:
 
 script:
   - cl -e '(ql:quickload :cffi-tests)
-           (asdf:test-system :cffi)
-           (unless (null (rtest:pending-tests))
+           (when (cffi-tests:run-all-cffi-tests)
              (uiop:quit 1))'
