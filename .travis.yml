@@ -18,7 +18,7 @@ matrix:
     - env: LISP=clisp32
 
 install:
-  - curl -L https://github.com/luismbo/cl-travis/raw/asdf-upgrade-maybe/install.sh | sh
+  - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
   - if [ "${LISP:(-2)}" = "32" ]; then
       sudo apt-get install libc6-dev-i386 libffi-dev:i386;
     fi
@@ -27,8 +27,7 @@ install:
   - git clone --depth=1 git://github.com/cl-babel/babel.git ~/lisp/babel
 
 script:
-  - cl-launch -i '(with-standard-io-syntax (ql:quickload :cffi-tests))
-                  (with-standard-io-syntax
-                    (asdf:test-system :cffi)
-                    (unless (null (rtest:pending-tests))
-                    (uiop:quit 1)))'
+  - cl -e '(ql:quickload :cffi-tests)
+           (asdf:test-system :cffi)
+           (unless (null (rtest:pending-tests))
+             (uiop:quit 1)))'
