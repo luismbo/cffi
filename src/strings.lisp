@@ -282,7 +282,8 @@ buffer along with ARGS." ; fix wording, sigh
       (foreign-free ptr))))
 
 (defmethod free-translated-object (ptr (type foreign-string-type) free-p)
-  (when free-p
+  (declare (ignore free-p))
+  (when (fst-free-to-foreign-p type)
     (foreign-string-free ptr)))
 
 (defmethod expand-to-foreign-dyn-indirect

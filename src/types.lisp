@@ -422,9 +422,17 @@ The foreign array must be freed with foreign-array-free."
     (lisp-array-to-foreign array ptr array-type)
     ptr))
 
-(defun foreign-array-free (ptr)
-  "Free a foreign array allocated by foreign-array-alloc."
+(defun %foreign-array-free (ptr type)
+  (when (eq :pointer (canonicalize-foreign-type (element-type type)))
+    (loop for i from 0 below (reduce #'* (dimensions type))
+          do (free-converted-object (mem-aref ptr :pointer i)
+                                    (element-type type)
+                                    'dummy)))
   (foreign-free ptr))
+
+(defun foreign-array-free (ptr array-type)
+  "Free a foreign array allocated by foreign-array-alloc."
+  (%foreign-array-free ptr (follow-typedefs (parse-type array-type))))
 
 (defmacro with-foreign-array ((var lisp-array array-type) &body body)
   "Bind var to a foreign array containing lisp-array elements in body."
@@ -452,14 +460,10 @@ The foreign array must be freed with foreign-array-free."
 ;;; Automatic translations for the :ARRAY type. Notice that these
 ;;; translators will also invoke the appropriate translators for for
 ;;; each of the array's elements since that's the normal behaviour of
-;;; the FOREIGN-ARRAY-* operators, but there's a FIXME: **it doesn't
-;;; free them yet**
-
-;;; This used to be in a separate type but let's experiment with just
-;;; one type for a while. [2008-12-30 LO]
+;;; the FOREIGN-ARRAY-* operators.
 
 ;;; FIXME: those ugly invocations of UNPARSE-TYPE suggest that these
-;;; foreign array operators should take the type and dimention
+;;; foreign array operators should take the type and dimension
 ;;; arguments "unboxed". [2008-12-31 LO]
 
 (defmethod translate-to-foreign (array (type foreign-array-type))
@@ -473,7 +477,7 @@ The foreign array must be freed with foreign-array-free."
 
 (defmethod free-translated-object (pointer (type foreign-array-type) param)
   (declare (ignore param))
-  (foreign-array-free pointer))
+  (%foreign-array-free pointer type))
 
 ;;;# Foreign Structures
 
