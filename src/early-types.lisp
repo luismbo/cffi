@@ -151,6 +151,11 @@ Signals an error if FOREIGN-TYPE is undefined."))
   (:documentation
    "Return the size in bytes of a foreign type."))
 
+(define-compiler-macro foreign-type-size (&whole form type)
+  (if (constantp type)
+      (foreign-type-size (eval type))
+      form))
+
 (defgeneric unparse-type (foreign-type)
   (:documentation
    "Unparse FOREIGN-TYPE to a type specification (symbol or list)."))
