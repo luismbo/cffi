@@ -5385,7 +5385,9 @@ CFFI> (with-foreign-pointer-as-string (s 100)
 
 @subheading See Also
 @seealso{foreign-funcall} @*
-@seealso{foreign-funcall-pointer}
+@seealso{foreign-funcall-pointer} @*
+@seealso{foreign-funcall-varargs} @*
+@seealso{foreign-funcall-pointer-varargs}
 
 
 @c ===================================================================
@@ -5557,6 +5559,7 @@ CFFI> (foreign-funcall-pointer (foreign-symbol-pointer "abs") ()
 @seealso{defcfun} @*
 @seealso{foreign-funcall}
 
+
 @c ===================================================================
 @c FOREIGN-FUNCALL-VARARGS
 
@@ -5566,9 +5569,9 @@ CFFI> (foreign-funcall-pointer (foreign-symbol-pointer "abs") ()
 @subheading Syntax
 @Macro{foreign-funcall-varargs name-and-options (fixed-arguments) &rest arguments @res{} return-value}
 
-fixed-arguments ::= @{ arg-type arg @}* [return-type]
-arguments ::= @{ arg-type arg @}* [return-type]
-name-and-options ::= name | ( name &key library convention)
+@var{fixed-arguments} ::= @{ @var{arg-type} @var{arg} @}* [@var{return-type}] @*
+@var{arguments} ::= @{ @var{arg-type} @var{arg} @}* [@var{return-type}] @*
+@var{name-and-options} ::= @var{name} | (@var{name} &key @var{library} @var{convention}) @*
 
 @subheading Arguments and Values
 
@@ -5605,12 +5608,13 @@ from the remaining arguments.
 
 @lisp
 CFFI> (with-foreign-pointer-as-string (s 100)
-          (setf (mem-ref s :char) 0)
-          (foreign-funcall-varargs
-           "sprintf" (:pointer s :string "%.2f")
-           :double (coerce pi 'double-float) :int))
+        (setf (mem-ref s :char) 0)
+        (foreign-funcall-varargs
+         "sprintf" (:pointer s :string) "%.2f")
+         :double (coerce pi 'double-float) :int))
 @result{} 3.14
 @end lisp
+
 
 @c ===================================================================
 @c FOREIGN-FUNCALL-POINTER-VARARGS
@@ -5621,9 +5625,9 @@ CFFI> (with-foreign-pointer-as-string (s 100)
 @subheading Syntax
 @Macro{foreign-funcall-pointer-varargs pointer options (fixed-arguments) &rest arguments @res{} return-value}
 
-fixed-arguments ::= @{ arg-type arg @}* [return-type]
-arguments ::= @{ arg-type arg @}* [return-type]
-options ::= ( &key convention )
+@var{fixed-arguments} ::= @{ @var{arg-type} @var{arg} @}* [@var{return-type}] @*
+@var{arguments} ::= @{ @var{arg-type} @var{arg} @}* [@var{return-type}] @*
+@var{options} ::= (&key @var{convention}) @*
 
 @subheading Arguments and Values
 
@@ -5657,12 +5661,13 @@ distinguished from the remaining arguments.
 
 @lisp
 CFFI> (with-foreign-pointer-as-string (s 100)
-          (setf (mem-ref s :char) 0)
-          (foreign-funcall-pointer-varargs
-           (foreign-symbol-pointer "sprintf") () (:pointer s :string "%.2f")
-           :double (coerce pi 'double-float) :int))
+        (setf (mem-ref s :char) 0)
+        (foreign-funcall-pointer-varargs
+         (foreign-symbol-pointer "sprintf") () (:pointer s :string "%.2f")
+         :double (coerce pi 'double-float) :int))
 @result{} 3.14
 @end lisp
+
 
 @c ===================================================================
 @c TRANSLATE-CAMELCASE-NAME
