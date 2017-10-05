@@ -183,21 +183,13 @@
               (mapcan #'list
                       (mapcar #'promote-varargs-type varargs-ctypes)
                       (loop for sym in varargs-syms
-                         and type in varargs-ctypes
-                         if (eq type :float)
-                         collect `(float ,sym 1.0d0)
-                         else collect sym))
+                            and type in varargs-ctypes
+                            if (eq type :float)
+                              collect `(float ,sym 1.0d0)
+                            else collect sym))
               (list (canonicalize-foreign-type rettype)))
             ,@options))))))
 
-;;; For now, the only difference between this macro and
-;;; FOREIGN-FUNCALL is that it does argument promotion for that
-;;; variadic argument. This could be useful to call an hypothetical
-;;; %foreign-funcall-varargs on some hypothetical lisp on an
-;;; hypothetical platform that has different calling conventions for
-;;; varargs functions. :-)
-;;;
-;;; -- indeed it is useful for ECL static FFI!
 (defmacro foreign-funcall-varargs (name-and-options fixed-args
                                    &rest varargs)
   "Wrapper around %FOREIGN-FUNCALL that translates its arguments
