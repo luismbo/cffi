@@ -28,16 +28,34 @@ jobs:
         include:
           - { os: ubuntu-latest, lisp: sbcl-bin }
           - { os: ubuntu-latest, lisp: ccl }
-          - { os: ubuntu-latest, lisp: ecl, experimental: true }
-          - { os: ubuntu-latest, lisp: abcl, experimental: true }
+          - { os: ubuntu-latest, lisp: ecl }
           - { os: ubuntu-latest, lisp: clisp, experimental: true }
-          - { os: ubuntu-latest, lisp: cmu-bin, experimental: true }
-          - { os: ubuntu-latest, lisp: allegro, experimental: true }
+          # ABCL has real failures (MISC-TYPES.SIZEOF.{PTRDIFF,SIZE,OFFSET}
+          # and TEST-ASDF-LOAD), so it stays experimental for now.
+          - { os: ubuntu-latest, lisp: abcl, experimental: true }
           - { os: macos-latest, lisp: sbcl-bin }
-          - { os: macos-latest, lisp: ccl, experimental: true }
           # Tracks the development versions of the libraries CFFI is
           # developed alongside, as the Travis setup used to.
           - { os: ubuntu-latest, lisp: sbcl-bin, deps: git, experimental: true }
+          #
+          # Combinations that Roswell cannot currently install, and what
+          # it would take to bring them back:
+          #
+          # CCL on macOS: the macos-latest runners are arm64 and there is
+          #   no arm64 macOS build of CCL to install -- roswell/ccl_bin
+          #   only publishes darwinx86, and upstream has nothing past the
+          #   v1.13-arm64-pre1 prerelease.  Needs an Intel runner or an
+          #   arm64 release.
+          #
+          # CMUCL: Roswell's cmu-bin installer asks for a .tar.bz2, but
+          #   CMUCL publishes .tar.xz from 21f on, so the download 404s.
+          #   Pinning cmu-bin/21e gets a tarball, but CMUCL is 32-bit
+          #   x86, so the job would also need gcc-multilib and an i386
+          #   libffi for cffi-libffi.
+          #
+          # Allegro: the express edition is still downloadable, but
+          #   `ros install allegro` fails on the runner; it also means
+          #   accepting Franz's licence agreement unattended.
     env:
       # Read by scripts/install-for-ci.sh to pick the implementation.
       LISP: ${{ matrix.lisp }}
@@ -76,8 +94,18 @@ jobs:
 
       - name: Run the test suite
         run: |
+          extra=()
+          if [ "$LISP" = abcl ]; then
+            # CFFI's ABCL backend needs JNA, which neither the ABCL
+            # distribution nor Roswell ships, and ABCL's own (require :jna)
+            # only works where Maven can resolve it.
+            curl -fsSL --retry 3 -o "$HOME/jna.jar" \
+              https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar
+            extra=(-e "(java:add-to-classpath \"$HOME/jna.jar\")")
+          fi
           # cffi-tests.asd loads trivial-features while it is being read, so
           # the dependencies have to be there before cffi-tests is quickloaded.
-          ros -e '(ql:quickload (list "trivial-features" "babel" "bordeaux-threads" "rt"))' \
+          ros "${extra[@]}" \
+              -e '(ql:quickload (list "trivial-features" "babel" "bordeaux-threads" "rt"))' \
               -e '(ql:quickload "cffi-tests")' \
               -e '(uiop:quit (if (cffi-tests:run-all-cffi-tests) 1 0))'
