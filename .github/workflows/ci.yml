@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Weekly, so that bit rot in the implementations, in Quicklisp or in
+    # the runner images is noticed even when nothing is being pushed.
+    - cron: '17 5 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.lisp }} on ${{ matrix.os }}${{ matrix.deps == 'git' && ' (deps from git)' || '' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    # Experimental jobs report failures without failing the whole build,
+    # like Travis' allow_failures used to.
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, lisp: sbcl-bin }
+          - { os: ubuntu-latest, lisp: ccl }
+          - { os: ubuntu-latest, lisp: ecl, experimental: true }
+          - { os: ubuntu-latest, lisp: abcl, experimental: true }
+          - { os: ubuntu-latest, lisp: clisp, experimental: true }
+          - { os: ubuntu-latest, lisp: cmu-bin, experimental: true }
+          - { os: ubuntu-latest, lisp: allegro, experimental: true }
+          - { os: macos-latest, lisp: sbcl-bin }
+          - { os: macos-latest, lisp: ccl, experimental: true }
+          # Tracks the development versions of the libraries CFFI is
+          # developed alongside, as the Travis setup used to.
+          - { os: ubuntu-latest, lisp: sbcl-bin, deps: git, experimental: true }
+    env:
+      # Read by scripts/install-for-ci.sh to pick the implementation.
+      LISP: ${{ matrix.lisp }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install C dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libffi-dev pkg-config
+        # macOS: ffi.h comes with the SDK and libffi.dylib with the system.
+
+      - name: Compute cache key
+        id: cache-key
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Roswell and Quicklisp
+        uses: actions/cache@v6
+        with:
+          path: ~/.roswell
+          key: roswell-${{ runner.os }}-${{ runner.arch }}-${{ matrix.lisp }}-${{ steps.cache-key.outputs.month }}
+          restore-keys: roswell-${{ runner.os }}-${{ runner.arch }}-${{ matrix.lisp }}-
+
+      - name: Install Roswell and ${{ matrix.lisp }}
+        run: curl -fsSL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+
+      # install-for-ci.sh puts both $GITHUB_WORKSPACE and ~/lisp in ASDF's
+      # source registry, so anything cloned here shadows the Quicklisp dist.
+      - name: Use development versions of CFFI's dependencies
+        if: matrix.deps == 'git'
+        run: |
+          git clone --depth=1 https://github.com/trivial-features/trivial-features.git ~/lisp/trivial-features
+          git clone --depth=1 https://github.com/cl-babel/babel.git ~/lisp/babel
+          git clone --depth=1 https://gitlab.common-lisp.net/alexandria/alexandria.git ~/lisp/alexandria
+
+      - name: Run the test suite
+        run: |
+          # cffi-tests.asd loads trivial-features while it is being read, so
+          # the dependencies have to be there before cffi-tests is quickloaded.
+          ros -e '(ql:quickload (list "trivial-features" "babel" "bordeaux-threads" "rt"))' \
+              -e '(ql:quickload "cffi-tests")' \
+              -e '(uiop:quit (if (cffi-tests:run-all-cffi-tests) 1 0))'
