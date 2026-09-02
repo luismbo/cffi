@@ -33,29 +33,27 @@ jobs:
           # ABCL has real failures (MISC-TYPES.SIZEOF.{PTRDIFF,SIZE,OFFSET}
           # and TEST-ASDF-LOAD), so it stays experimental for now.
           - { os: ubuntu-latest, lisp: abcl, experimental: true }
+          # Both of these are pinned to work around Roswell bugs: left to
+          # itself it picks a version whose download is gone.  It defaults
+          # to Allegro 10.1express, which Franz no longer serves -- fixed
+          # in Roswell 9709c0d, but that postdates the v26.02.116 release
+          # that install-for-ci.sh installs.  And it defaults to the
+          # newest CMUCL while its installer only knows how to fetch
+          # .tar.bz2, which CMUCL stopped publishing after 21e.  Drop both
+          # pins once a Roswell release carries the fixes.
+          - { os: ubuntu-latest, lisp: allegro/11.0express, experimental: true }
+          - { os: ubuntu-latest, lisp: cmu-bin/21e, multilib: true, experimental: true }
           - { os: macos-latest, lisp: sbcl-bin }
           # Tracks the development versions of the libraries CFFI is
           # developed alongside, as the Travis setup used to.
           - { os: ubuntu-latest, lisp: sbcl-bin, deps: git, experimental: true }
           #
-          # Combinations that Roswell cannot currently install, and what
-          # it would take to bring them back:
-          #
-          # CCL on macOS: the macos-latest runners are arm64 and there is
-          #   no arm64 macOS build of CCL to install -- roswell/ccl_bin
-          #   only publishes darwinx86, and upstream has nothing past the
-          #   v1.13-arm64-pre1 prerelease.  Needs an Intel runner or an
-          #   arm64 release.
-          #
-          # CMUCL: Roswell's cmu-bin installer asks for a .tar.bz2, but
-          #   CMUCL publishes .tar.xz from 21f on, so the download 404s.
-          #   Pinning cmu-bin/21e gets a tarball, but CMUCL is 32-bit
-          #   x86, so the job would also need gcc-multilib and an i386
-          #   libffi for cffi-libffi.
-          #
-          # Allegro: the express edition is still downloadable, but
-          #   `ros install allegro` fails on the runner; it also means
-          #   accepting Franz's licence agreement unattended.
+          # CCL on macOS is missing: the macos-latest runners are arm64
+          # and Roswell says "Not supported platform arm64" because there
+          # is no arm64 macOS build to install -- roswell/ccl_bin only
+          # publishes darwinx86, and upstream has nothing past the
+          # v1.13-arm64-pre1 prerelease.  It needs an Intel runner or an
+          # arm64 release.
     env:
       # Read by scripts/install-for-ci.sh to pick the implementation.
       LISP: ${{ matrix.lisp }}
@@ -65,8 +63,16 @@ jobs:
       - name: Install C dependencies
         if: runner.os == 'Linux'
         run: |
+          # CMUCL is 32-bit x86, so it builds the test libraries with -m32
+          # and needs an i386 libffi for cffi-libffi.
+          if [ "${{ matrix.multilib }}" = true ]; then
+            sudo dpkg --add-architecture i386
+          fi
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libffi-dev pkg-config
+          if [ "${{ matrix.multilib }}" = true ]; then
+            sudo apt-get install -y --no-install-recommends gcc-multilib libffi-dev:i386
+          fi
         # macOS: ffi.h comes with the SDK and libffi.dylib with the system.
 
       - name: Compute cache key
