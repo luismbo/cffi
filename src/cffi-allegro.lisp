@@ -88,7 +88,8 @@
 
 (defun foreign-free (ptr)
   "Free a PTR allocated by FOREIGN-ALLOC."
-  (ff:free-fobject ptr))
+  (ff:free-fobject ptr)
+  nil)
 
 (defmacro with-foreign-pointer ((var size &optional size-var) &body body)
   "Bind VAR to SIZE bytes of foreign memory during BODY.  The
