@@ -144,6 +144,6 @@ jobs:
                           (format *error-output* "~&Unhandled ~a:~%  ~a~%"
                                   (type-of condition) condition)
                           (uiop:quit 3)))' \
-              -e '(ql:quickload (list "trivial-features" "babel" "bordeaux-threads" "rt"))' \
+              -e '(ql:quickload (list "trivial-features" "babel" "rt"))' \
               -e '(ql:quickload "cffi-tests")' \
               -e '(uiop:quit (if (cffi-tests:run-all-cffi-tests) 1 0))'
