@@ -110,8 +110,20 @@ jobs:
           key: roswell-${{ runner.os }}-${{ runner.arch }}-${{ matrix.lisp }}-${{ steps.cache-key.outputs.month }}
           restore-keys: roswell-${{ runner.os }}-${{ runner.arch }}-${{ matrix.lisp }}-
 
+      # The flakiest part of the build: `ros use` fails outright if a
+      # restored cache doesn't hold the version Roswell now resolves to,
+      # and the version listings it fetches are not always reachable.
+      # Neither is worth a red build, so try once more from scratch.
       - name: Install Roswell and ${{ matrix.lisp }}
+        id: roswell
+        continue-on-error: true
         run: curl -fsSL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+
+      - name: Install Roswell and ${{ matrix.lisp }} (retry, without the cache)
+        if: steps.roswell.outcome == 'failure'
+        run: |
+          rm -rf ~/.roswell
+          curl -fsSL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
 
       # install-for-ci.sh puts both $GITHUB_WORKSPACE and ~/lisp in ASDF's
       # source registry, so anything cloned here shadows the Quicklisp dist.
