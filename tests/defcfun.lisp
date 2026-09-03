@@ -463,10 +463,15 @@
        27033.0d0 1096518219 -12 104 3392025403 -27911 60 89 509297051
        -533066551 29158.0 110 54 -9802.0d0 593950442165910888 -79)
     ;; SUM_127 casts its pointer arguments to intptr_t.  Eight of the ones
-    ;; above sit above 2^31, so where intptr_t is 32 bits wide each of them
-    ;; sign-extends to a negative number and the sum comes out 8 * 2^32
-    ;; lower -- a different total, but the right one for the platform.
-    #.(- 7758614658402721936 #+32-bit (* 8 (expt 2 32)) #-32-bit 0)))
+    ;; above sit above 2^31, so where a pointer is 32 bits wide each of
+    ;; them sign-extends to a negative number and the sum comes out
+    ;; 8 * 2^32 lower -- a different total, but the right one for the
+    ;; platform.  Ask for the pointer size rather than testing for the
+    ;; :32-BIT feature, which isn't always right: ABCL reports it on a
+    ;; 64-bit JVM.
+    #.(if (= 4 (cffi:foreign-type-size :pointer))
+          (- 7758614658402721936 (* 8 (expt 2 32)))
+          7758614658402721936)))
 
 ;;; regression test: defining an undefined foreign function should only
 ;;; throw some sort of warning, not signal an error.
