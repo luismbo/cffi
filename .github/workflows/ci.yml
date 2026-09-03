@@ -19,6 +19,11 @@ jobs:
     name: ${{ matrix.lisp }} on ${{ matrix.os }}${{ matrix.deps == 'git' && ' (deps from git)' || '' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    defaults:
+      run:
+        # Roswell on Windows lives inside MSYS2 and has to be driven from
+        # its shell; everywhere else the runner's bash is fine.
+        shell: ${{ matrix.shell || 'bash' }}
     # Experimental jobs report failures without failing the whole build,
     # like Travis' allow_failures used to.
     continue-on-error: ${{ matrix.experimental || false }}
@@ -44,6 +49,7 @@ jobs:
           - { os: ubuntu-latest, lisp: allegro/11.0express, experimental: true }
           - { os: ubuntu-latest, lisp: cmu-bin/21e, multilib: true, experimental: true }
           - { os: macos-latest, lisp: sbcl-bin }
+          - { os: windows-latest, lisp: sbcl-bin, shell: 'msys2 {0}' }
           # Tracks the development versions of the libraries CFFI is
           # developed alongside, as the Travis setup used to.
           - { os: ubuntu-latest, lisp: sbcl-bin, deps: git, experimental: true }
@@ -59,6 +65,22 @@ jobs:
       LISP: ${{ matrix.lisp }}
     steps:
       - uses: actions/checkout@v7
+
+      # Brings its own gcc, libffi and pkg-config, so the Linux step below
+      # has no Windows counterpart.
+      - name: Set up MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          # Roswell shells out to what it finds on PATH, so let it see the
+          # runner's tools as well as MSYS2's.
+          path-type: inherit
+          install: >-
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-libffi
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-roswell
 
       - name: Install C dependencies
         if: runner.os == 'Linux'
