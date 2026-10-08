@@ -74,15 +74,18 @@ jobs:
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
+          # MINGW64 is deprecated in favour of UCRT64, which links the
+          # Universal CRT instead of the ancient msvcrt.dll.
+          msystem: UCRT64
           # Roswell shells out to what it finds on PATH, so let it see the
           # runner's tools as well as MSYS2's.
           path-type: inherit
           install: >-
             make
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-libffi
-            mingw-w64-x86_64-pkgconf
-            mingw-w64-x86_64-roswell
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-libffi
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-roswell
 
       - name: Install C dependencies
         if: runner.os == 'Linux'
